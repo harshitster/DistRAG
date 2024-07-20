@@ -1,0 +1,233 @@
+networks:
+  citus-network:
+    driver: bridge
+
+services:
+  master:
+    container_name: "citus_master"
+    image: "citusdata/citus:latest"
+    ports:
+      - "5432:5432"
+    labels:
+      - "com.citusdata.role=Master"
+    environment: &AUTH
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      PGUSER: "postgres"
+      PGPASSWORD: "postgres"
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+      POSTGRES_DB: "citus"
+    healthcheck:
+      test: ["CMD-SHELL", "/pg_healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - citus-master-data:/var/lib/postgresql/data
+    networks:
+      - citus-network
+
+  worker1:
+    image: "citusdata/citus:latest"
+    labels:
+      - "com.citusdata.role=Worker"
+    depends_on:
+      - manager
+    environment: *AUTH
+    command: "/wait-for-manager.sh"
+    volumes:
+      - healthcheck-volume:/healthcheck
+      - citus-worker1-data:/var/lib/postgresql/data
+    networks:
+      - citus-network
+
+  worker2:
+    image: "citusdata/citus:latest"
+    labels:
+      - "com.citusdata.role=Worker"
+    depends_on:
+      - manager
+    environment: *AUTH
+    command: "/wait-for-manager.sh"
+    volumes:
+      - healthcheck-volume:/healthcheck
+      - citus-worker2-data:/var/lib/postgresql/data
+    networks:
+      - citus-network
+
+  manager:
+    container_name: "citus_manager"
+    image: "citusdata/membership-manager:latest"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - healthcheck-volume:/healthcheck
+    depends_on:
+      master:
+        condition: service_healthy
+    environment: *AUTH
+    networks:
+      - citus-network
+    command: sh -c "touch /healthcheck/manager-ready && python /manager.py"
+
+  pgadmin:
+    container_name: pgadmin
+    image: "dpage/pgadmin4:latest"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+      PGADMIN_SERVER_JSON_FILE: "/pgadmin4/servers.json"
+    ports:
+      - "8080:80"
+    volumes:
+      - ./citus-servers.json:/pgadmin4/servers.json
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - citus-network
+    depends_on:
+      master:
+        condition: service_healthy
+      worker1:
+        condition: service_started
+      worker2:
+        condition: service_started
+
+  python-init:
+    image: python:3.11-slim
+    volumes:
+      - ./db-engine/db-init.py:/db-init.py
+      - ./db-init.sh:/db-init.sh
+      - db-init-signal:/db-init-signal
+    command: >
+      sh -c "
+        python3 -m venv /venv &&
+        . /venv/bin/activate &&
+        pip install --upgrade pip --quiet &&
+        pip install --no-cache-dir --quiet psycopg2-binary==2.9.9 &&
+        chmod +x /db-init.sh
+        /db-init.sh
+      "
+    environment: &POSTGRES
+      POSTGRES_HOST: master
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: citus
+    networks:
+      - citus-network
+    depends_on:
+      master:
+        condition: service_healthy
+
+  llm-1:
+    build: 
+      context: .
+      dockerfile: Dockerfile.ai-engine
+    volumes:
+      - db-init-signal:/db-init-signal
+    environment: 
+      <<: *POSTGRES
+      LLM_ID: 18001
+      GOOGLE_API_KEYS: |- 
+        AIzaSyAPiXYd9s5HNXQO42b1PD0eoSWaybAxTLs
+        AIzaSyDMX5A8hwDQMcXz1sCgY7l0SXAoEOmzXDc
+        AIzaSyC7-4rCi0AuSbXy2p82LmaoncFoCjpd5_c
+        AIzaSyCkWUjDGeTxsXi8U26IHPgRA5efMrjLcsc
+        AIzaSyDiFBuqC6V6ekMrdUdynzdMiLmartIKFxM
+        AIzaSyBa4ruWUjsiXVqfJy1MKMJt8Bg1EBE4wD0 
+        AIzaSyAdmTsDC1W02BscksBf20z6KWng5oV5fc8
+        AIzaSyD74Vd0qx8CwEjBKS_PbjI-FJwiuSzm2wk
+        AIzaSyBiBuzOGjtfKnxh6xluon--1nKxalUjM7s
+        AIzaSyDz8s-ATZAc4f2AuHhasa67hbEmDcHrIpc
+    ports:
+      - "8001:8000"
+    networks:
+      - citus-network
+    depends_on:
+      master:
+        condition: service_healthy
+      python-init:
+        condition: service_completed_successfully
+
+  llm-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai-engine
+    volumes:
+      - db-init-signal:/db-init-signal
+    environment: 
+      <<: *POSTGRES
+      LLM_ID: 18002
+      GOOGLE_API_KEYS: |-
+        AIzaSyDz8s-ATZAc4f2AuHhasa67hbEmDcHrIpc
+        AIzaSyBiBuzOGjtfKnxh6xluon--1nKxalUjM7s
+        AIzaSyD74Vd0qx8CwEjBKS_PbjI-FJwiuSzm2wk
+        AIzaSyAdmTsDC1W02BscksBf20z6KWng5oV5fc8
+        AIzaSyBa4ruWUjsiXVqfJy1MKMJt8Bg1EBE4wD0
+        AIzaSyC6g4God2jExDvEk7TSARMGLRsHEsG-Qdo
+        AIzaSyCNYCrIzeTsSCucltIehjuonTB5_ZIBtrk
+        AIzaSyDP5kSQU-wAmHOvSLKR_V7F5bNJfbrB1SM
+        AIzaSyDT8-aMqA8t8Vc9Fi3U8AX1ZcLRh2XlVBA
+        AIzaSyCgjQW8Mw8PrQDJxHnmWJKe5FCMSdVqWh0
+    ports:
+      - "8002:8000"
+    networks:
+      - citus-network
+    depends_on:
+      master: 
+        condition: service_started
+      python-init:
+        condition: service_completed_successfully
+
+  llm-3:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai-engine
+    volumes:
+      - db-init-signal:/db-init-signal
+    environment: 
+      <<: *POSTGRES
+      LLM_ID: 18003
+      GOOGLE_API_KEYS: |-
+        AIzaSyCjsA5KdO_ifpsSbGJRjz0bnaJnYFHjUlo
+        AIzaSyBznkEfFHx1Z1XEMBTjsplKZixfS47f9dI
+        AIzaSyB-_IZgCbpsyHV4yQh3ykmbQ8Tdfu9Fjns
+        AIzaSyDoCUbvOSxMVxlhsmAfmtDoJbCDgeeTLj0
+        AIzaSyC6p3wGcFDAaSrvDbt_WPSejVooa-olZDk
+        AIzaSyBzlG4GVJ_Os0yTfZpoF4Pccx_EJR36Qpo
+        AIzaSyDU9ZXAAmmO7dizaySeRlLZ-rDdR67KPVw
+        AIzaSyCKunMu-CjXvJzHlYliQIuAWmizwJTI8Qw
+        AIzaSyDwB8I3GPYy88uo2qDs-x7nlhTE6tHXZ6c
+        AIzaSyDu0VaC2TZpf5XGAeKRsI92gt0Tzdo60uw
+    ports:
+      - "8003:8000"
+    networks:
+      - citus-network
+    depends_on:
+      master: 
+        condition: service_started
+      python-init:
+        condition: service_completed_successfully
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx_ai-engine.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      llm-1:
+        condition: service_started
+      llm-2:
+        condition: service_started
+      llm-3:
+        condition: service_started
+    ports:
+      - "80:80"
+    networks:
+      - citus-network
+
+volumes:
+  healthcheck-volume:
+  citus-master-data:
+  citus-worker1-data:
+  citus-worker2-data:
+  pgadmin-data: 
+  db-init-signal:

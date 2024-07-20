@@ -1,0 +1,31 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "Citus Master",
+            "Group": "Citus Cluster",
+            "Host": "master",
+            "Port": 5432,
+            "MaintenanceDB": "postgres",
+            "Username": "postgres",
+            "SSLMode": "prefer"
+        },
+        "2": {
+            "Name": "Citus Worker 1",
+            "Group": "Citus Cluster",
+            "Host": "worker1",
+            "Port": 5432,
+            "MaintenanceDB": "postgres",
+            "Username": "postgres",
+            "SSLMode": "prefer"
+        },
+        "3": {
+            "Name": "Citus Worker 2",
+            "Group": "Citus Cluster",
+            "Host": "worker2",
+            "Port": 5432,
+            "MaintenanceDB": "postgres",
+            "Username": "postgres",
+            "SSLMode": "prefer"
+        }
+    }
+}

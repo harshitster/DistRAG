@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && \
+    apt install -y libgl1-mesa-glx
+
+COPY db-engine/change_notifier.py db-engine/db_listener.py db-engine/config.py  ./
+    
+COPY requirements_db-engine.txt requirements.txt
+
+RUN python3 -m venv /app/venv && \
+    . /app/venv/bin/activate && \
+    pip install --upgrade pip --quiet && \
+    pip install --no-cache-dir -r requirements.txt --quiet 
+
+ENV LLM_SERVER_1=http://llm1:8000
+ENV LLM_SERVER_2=http://llm2:8000
+
+CMD ["python", "/app/change_notifier.py"]
