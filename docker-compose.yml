@@ -138,6 +138,7 @@ services:
         AIzaSyD74Vd0qx8CwEjBKS_PbjI-FJwiuSzm2wk
         AIzaSyBiBuzOGjtfKnxh6xluon--1nKxalUjM7s
         AIzaSyDz8s-ATZAc4f2AuHhasa67hbEmDcHrIpc
+      CACHE_ENGINE_URL: "http://cache-engine:6380"
     ports:
       - "8001:8000"
     networks:
@@ -147,6 +148,8 @@ services:
         condition: service_healthy
       python-init:
         condition: service_completed_successfully
+      cache-engine:
+        condition: service_started
 
   llm-2:
     build:
@@ -168,6 +171,7 @@ services:
         AIzaSyDP5kSQU-wAmHOvSLKR_V7F5bNJfbrB1SM
         AIzaSyDT8-aMqA8t8Vc9Fi3U8AX1ZcLRh2XlVBA
         AIzaSyCgjQW8Mw8PrQDJxHnmWJKe5FCMSdVqWh0
+      CACHE_ENGINE_URL: "http://cache-engine:6380"
     ports:
       - "8002:8000"
     networks:
@@ -177,6 +181,8 @@ services:
         condition: service_started
       python-init:
         condition: service_completed_successfully
+      cache-engine:
+        condition: service_started
 
   llm-3:
     build:
@@ -198,6 +204,7 @@ services:
         AIzaSyCKunMu-CjXvJzHlYliQIuAWmizwJTI8Qw
         AIzaSyDwB8I3GPYy88uo2qDs-x7nlhTE6tHXZ6c
         AIzaSyDu0VaC2TZpf5XGAeKRsI92gt0Tzdo60uw
+      CACHE_ENGINE_URL: "http://cache-engine:6380"
     ports:
       - "8003:8000"
     networks:
@@ -207,6 +214,8 @@ services:
         condition: service_started
       python-init:
         condition: service_completed_successfully
+      cache-engine:
+        condition: service_started
 
   nginx:
     image: nginx:latest
@@ -224,6 +233,30 @@ services:
     networks:
       - citus-network
 
+  redis:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - citus-network
+
+  cache-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile.cache-engine
+    environment:
+      HOST: redis
+      PORT: 6379
+    ports:
+      - "6380:6380"
+    networks:
+      - citus-network
+    depends_on:
+      redis:
+        condition: service_started
+
 volumes:
   healthcheck-volume:
   citus-master-data:
@@ -231,3 +264,4 @@ volumes:
   citus-worker2-data:
   pgadmin-data: 
   db-init-signal:
+  redis-data:

@@ -74,7 +74,14 @@ class DatabaseIndexer:
             table_infos = []
             for table_name in table_names:
                 llm, _ = self.get_next_models()
-                summary = self.get_table_summary(engine, llm, table_name, table_names) # skeptical with table names
+                res = False
+                while not res:
+                    try:
+                        summary = self.get_table_summary(engine, llm, table_name, table_names) # skeptical with table names
+                        res = True
+                    except Exception as e:
+                        print("Exception Occured - ", time.time())
+                        llm, _ = self.get_next_models()
                 try:
                     cleaned_summary = summary.strip().lstrip('`').rstrip('`')
                     if cleaned_summary.startswith('json'):
