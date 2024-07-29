@@ -3,13 +3,13 @@ import logging
 import threading
 import time
 import sqlalchemy
-import chromadb
+import chromadb # type: ignore
 import queue
 from collections import deque
 from contextlib import ExitStack
-from llama_index.llms.gemini import Gemini
+from llama_index.llms.gemini import Gemini # type: ignore
 from llama_index.core import Settings, StorageContext
-from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.vector_stores.chroma import ChromaVectorStore # type: ignore
 
 import indexer
 import pipeline

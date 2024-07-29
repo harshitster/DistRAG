@@ -6,7 +6,7 @@ import time
 
 from collections import deque
 from llama_index.core import Document, VectorStoreIndex, Settings
-from llama_index.llms.gemini import Gemini
+from llama_index.llms.gemini import Gemini # type: ignore
 from llama_index.embeddings.gemini import GeminiEmbedding
 
 class TableInfo(pydantic.BaseModel):
@@ -23,6 +23,14 @@ class DatabaseIndexer:
         self.model_pool = deque(maxlen=len(self.google_api_keys))
 
         self.load_models()
+
+        self.prompt_str = """
+            Given the following table information, provide a brief, general summary of what kind of data this table might contain. 
+            Output should be in the form of a JSON string: {{"table_name": "<suggested_name>", "table_summary": "<brief_summary>"}}
+            The table name should be descriptive but generic, avoiding any specific identifiers.
+            Do NOT use any of the following names: {exclude_table_name_list}
+            Table information: {table_str}
+        """
                 
     def load_models(self):
         for api_key in self.google_api_keys:
@@ -121,14 +129,6 @@ class DatabaseIndexer:
         except Exception as e:
             self.logger.error(f"Failed to create vector index: {e}")
             raise
-
-    prompt_str = """
-        Given the following table information, provide a brief, general summary of what kind of data this table might contain. 
-        Output should be in the form of a JSON string: {{"table_name": "<suggested_name>", "table_summary": "<brief_summary>"}}
-        The table name should be descriptive but generic, avoiding any specific identifiers.
-        Do NOT use any of the following names: {exclude_table_name_list}
-        Table information: {table_str}
-    """
 
     def run(self, engine, storage_context):
         try:

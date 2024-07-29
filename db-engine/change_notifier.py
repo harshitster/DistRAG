@@ -1,5 +1,5 @@
 import asyncio
-import aiohttp
+import httpx
 from db_listener import DatabaseChangeListener
 from config import Config
 
@@ -10,17 +10,17 @@ class DBChangeNotifier:
         self.llm_servers = ["http://llm1:8000", "http://llm2:8000", "http://llm3:8000"]
 
     async def notify_llm_servers(self):
-        async with aiohttp.ClientSession() as session:
-            tasks = [self.notify_server(session, server) for server in self.llm_servers]
+        async with httpx.AsyncClient() as client:
+            tasks = [self.notify_server(client, server) for server in self.llm_servers]
             await asyncio.gather(*tasks)
 
-    async def notify_server(self, session, server):
+    async def notify_server(self, client, server):
         try:
-            async with session.post(f"{server}/rebuild") as response:
-                if response.status == 200:
-                    print(f"Successfully notified {server}")
-                else:
-                    print(f"Failed to notify {server}. Status: {response.status}")
+            response = await client.post(f"{server}/rebuild")
+            if response.status_code == 200:
+                print(f"Successfully notified {server}")
+            else:
+                print(f"Failed to notify {server}. Status: {response.status_code}")
         except Exception as e:
             print(f"Error notifying {server}: {str(e)}")
 
