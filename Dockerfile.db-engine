@@ -1,20 +1,25 @@
-FROM python:3.11-slim
+FROM --platform=linux/amd64 python:3.11-slim
 
 WORKDIR /app
 
 RUN apt-get update && \
-    apt install -y libgl1-mesa-glx
+    apt-get install -y libpq-dev gcc && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-COPY db-engine/change_notifier.py db-engine/db_listener.py db-engine/config.py  ./
-    
+COPY db-engine/change_listener.py \
+     db-engine/main.py \
+     db-engine/notifier.py \
+     ./
+
 COPY requirements_db-engine.txt requirements.txt
+
+ENV CACHE_ENGINE_ENDPOINT="http://cache-engine:6380"
+ENV LLM_ENDPOINTS="http://llm1:8000,http://llm2:8000,http://llm3:8000"
 
 RUN python3 -m venv /app/venv && \
     . /app/venv/bin/activate && \
     pip install --upgrade pip --quiet && \
     pip install --no-cache-dir -r requirements.txt --quiet 
 
-ENV LLM_SERVER_1=http://llm1:8000
-ENV LLM_SERVER_2=http://llm2:8000
-
-CMD ["python", "/app/change_notifier.py"]
+CMD ["/app/venv/bin/python", "main.py"]

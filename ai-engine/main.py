@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from llm import LLM
+from unimap import UniMap 
 import httpx
 import logging
 
@@ -10,13 +11,13 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 llm_instance = LLM()
+unimap_instance = UniMap() 
 
 CACHE_ENGINE_URL = os.environ['CACHE_ENGINE_URL']
 logger.info(f"CACHE_ENGINE_URL: {CACHE_ENGINE_URL}")
 
 class QueryRequest(BaseModel):
-    input_str: str
-    university_id: str
+    query: str
 
 class CacheRequest(BaseModel):
     university_id: str
@@ -24,11 +25,11 @@ class CacheRequest(BaseModel):
     response: str
     version: str
 
-async def get_cached_response(query: QueryRequest):
+async def get_cached_response(university_id: str, query: str):
     async with httpx.AsyncClient() as client:
         try:
             logger.info(f"Attempting to get cached response from: {CACHE_ENGINE_URL}/get_cached_response")
-            response = await client.post(f"{CACHE_ENGINE_URL}/get_cached_response", json=query.dict())
+            response = await client.post(f"{CACHE_ENGINE_URL}/get_cached_response", json={"input_str": query, "university_id": university_id})
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
@@ -61,22 +62,45 @@ async def cache_response(university_id: str, query: str, response: str, version:
             logger.error(f"Unexpected error while caching response: {str(e)}")
 
 @app.post("/query")
-async def query(query: QueryRequest):
+async def query(query_request: QueryRequest):
     try:
+        university_id = unimap_instance.process_query(query_request.query)
+
+        query = query_request.query
+        if university_id == '$':
+            logger.warning(f"No university found in query: {query_request.query}")
+            university_id = "UNKNOWN"
+        else:
+            university_name = unimap_instance.get_university_name(university_id)
+            formatted_query = f"{query_request.query}. The name of the university is {university_name} and the associated id is {university_id}"
+            query_request.query = formatted_query
+
         logger.info("Checking for Cache...")
-        cached_response = await get_cached_response(query)
+        cached_response = await get_cached_response(university_id, query_request.query)
         
         if cached_response:
             logger.info("Cache hit!")
-            return {"response": cached_response[0]["response"], "version": "cached", "source": "cache"}
+            return {
+                "response": cached_response[0]["response"],
+                "version": "cached",
+                "source": "cache",
+                "university_name": university_name,
+                "university_id": university_id
+            }
         
         logger.info("Cache miss. Getting response from ai-engine...")
-        response, version = llm_instance.query(query.input_str)
+        response, version = llm_instance.query(query_request.query)
         
         logger.info("Caching the response...")
-        await cache_response(query.university_id, query.input_str, response, version)
+        await cache_response(university_id, query, response, version)
         
-        return {"response": response, "version": str(version), "source": "llm"}
+        return {
+            "response": response,
+            "version": str(version),
+            "source": "llm",
+            "university_name": university_name,
+            "university_id": university_id
+        }
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
@@ -103,6 +127,7 @@ async def rebuild():
     except Exception as e:
         logger.error(f"Error during rebuild process: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error during rebuild process: {str(e)}")
+    
 @app.on_event("shutdown")
 def shutdown_event():
     llm_instance.stop()

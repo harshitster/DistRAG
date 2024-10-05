@@ -1,0 +1,8 @@
+universities:
+  Harvard: "001"
+  MIT: "002"
+  Stanford: "003"
+  UC San Diego: "004"
+
+llm_model: "models/gemini-1.0-pro"
+embedding_model: "models/text-embedding-004"

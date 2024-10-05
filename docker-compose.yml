@@ -5,6 +5,7 @@ networks:
 services:
   master:
     container_name: "citus_master"
+    platform: linux/amd64
     image: "citusdata/citus:latest"
     ports:
       - "5432:5432"
@@ -29,6 +30,7 @@ services:
 
   worker1:
     image: "citusdata/citus:latest"
+    platform: linux/amd64
     labels:
       - "com.citusdata.role=Worker"
     depends_on:
@@ -43,6 +45,7 @@ services:
 
   worker2:
     image: "citusdata/citus:latest"
+    platform: linux/amd64
     labels:
       - "com.citusdata.role=Worker"
     depends_on:
@@ -57,6 +60,7 @@ services:
 
   manager:
     container_name: "citus_manager"
+    platform: linux/amd64
     image: "citusdata/membership-manager:latest"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
@@ -71,6 +75,7 @@ services:
 
   pgadmin:
     container_name: pgadmin
+    platform: linux/amd64
     image: "dpage/pgadmin4:latest"
     environment:
       PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
@@ -93,10 +98,13 @@ services:
 
   python-init:
     image: python:3.11-slim
+    platform: linux/amd64
     volumes:
       - ./db-engine/db-init.py:/db-init.py
+      - ./db-engine/schema.sql:/schema.sql
       - ./db-init.sh:/db-init.sh
       - db-init-signal:/db-init-signal
+      - python-init-logs:/app/db-store
     command: >
       sh -c "
         python3 -m venv /venv &&
@@ -112,6 +120,18 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: citus
+    networks:
+      - citus-network
+    depends_on:
+      master:
+        condition: service_healthy
+
+  db-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile.db-engine
+    environment:
+      <<: *POSTGRES
     networks:
       - citus-network
     depends_on:
@@ -138,7 +158,6 @@ services:
         AIzaSyD74Vd0qx8CwEjBKS_PbjI-FJwiuSzm2wk
         AIzaSyBiBuzOGjtfKnxh6xluon--1nKxalUjM7s
         AIzaSyDz8s-ATZAc4f2AuHhasa67hbEmDcHrIpc
-      CACHE_ENGINE_URL: "http://cache-engine:6380"
     ports:
       - "8001:8000"
     networks:
@@ -171,7 +190,6 @@ services:
         AIzaSyDP5kSQU-wAmHOvSLKR_V7F5bNJfbrB1SM
         AIzaSyDT8-aMqA8t8Vc9Fi3U8AX1ZcLRh2XlVBA
         AIzaSyCgjQW8Mw8PrQDJxHnmWJKe5FCMSdVqWh0
-      CACHE_ENGINE_URL: "http://cache-engine:6380"
     ports:
       - "8002:8000"
     networks:
@@ -204,7 +222,6 @@ services:
         AIzaSyCKunMu-CjXvJzHlYliQIuAWmizwJTI8Qw
         AIzaSyDwB8I3GPYy88uo2qDs-x7nlhTE6tHXZ6c
         AIzaSyDu0VaC2TZpf5XGAeKRsI92gt0Tzdo60uw
-      CACHE_ENGINE_URL: "http://cache-engine:6380"
     ports:
       - "8003:8000"
     networks:
@@ -219,6 +236,7 @@ services:
 
   nginx:
     image: nginx:latest
+    platform: linux/amd64
     volumes:
       - ./nginx_ai-engine.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -234,6 +252,7 @@ services:
       - citus-network
 
   redis:
+    platform: linux/amd64
     image: redis/redis-stack-server:latest
     ports:
       - "6379:6379"
@@ -257,6 +276,12 @@ services:
       redis:
         condition: service_started
 
+  log-access:
+    image: alpine
+    volumes:
+      - python-init-logs:/logs
+    command: tail -f /dev/null
+
 volumes:
   healthcheck-volume:
   citus-master-data:
@@ -265,3 +290,5 @@ volumes:
   pgadmin-data: 
   db-init-signal:
   redis-data:
+
+  python-init-logs:

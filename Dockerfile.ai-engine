@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM --platform=linux/amd64 python:3.11-slim
 
 WORKDIR /app
 
@@ -18,7 +18,8 @@ RUN python3 -m venv /app/venv && \
 
 ENV PYTHONPATH=/app
 ENV LLM_MODEL="models/gemini-1.5-pro"
-ENV EMBED_MODEL="models/embedding-001"
+ENV EMBED_MODEL="models/text-embedding-004"
+ENV CACHE_ENGINE_URL="http://cache-engine:6380"
 
 ENTRYPOINT ["/wait-for-db-init.sh"]
 

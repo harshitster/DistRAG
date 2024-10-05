@@ -37,7 +37,12 @@ def _build_query_pipeline(engine, vector_store, llm):
             sql_result_start = response.find("SQLResult:")
             if (sql_result_start != -1):
                 response = response[:sql_result_start]
-        return response.strip().strip("```").strip()
+        response = response.strip().strip("```").strip()
+        
+        if response.lower().startswith('sql'):
+            response = response[3:].lstrip()
+        
+        return response
     
     sql_parser_component = FnComponent(fn=parse_response_to_sql)
 

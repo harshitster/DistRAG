@@ -8,6 +8,7 @@ import queue
 from collections import deque
 from contextlib import ExitStack
 from llama_index.llms.gemini import Gemini # type: ignore
+from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.core import Settings, StorageContext
 from llama_index.vector_stores.chroma import ChromaVectorStore # type: ignore
 
@@ -118,6 +119,8 @@ class LLM:
         self.create_index_and_pipelines()
 
     def create_index_and_pipelines(self):
+        Settings.embed_model = self.database_indexer.get_next_models()[1]
+
         index = self.database_indexer.run(self.engine, self.storage_context)
         for _ in range(self.pipeline_pool.maxlen):
             llm = self.get_next_llm()

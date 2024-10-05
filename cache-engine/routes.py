@@ -19,6 +19,9 @@ class CacheRequest(BaseModel):
     response: str
     version: str
 
+class FlushUniversityCacheRequest(BaseModel):
+    university_id: str
+
 MAX_CACHE_SIZE_PER_UNIVERSITY = int(os.environ['MAX_CACHE_PER'])
 CACHE_EVICTION_ALGORITHM = os.environ['CACHE_ALGO']
 
@@ -91,6 +94,42 @@ async def get_cached_response(query: QueryRequest, redis_client=Depends(get_redi
         print(f"Exception type: {type(e)}")
         print(f"Exception args: {e.args}")
         raise HTTPException(status_code=500, detail=f"Error searching cache: {str(e)}")
+
+@router.post("/flush_university_cache")
+async def flush_university_cache(request: FlushUniversityCacheRequest, redis_client=Depends(get_redis_client)):
+    try:
+        cache_key = f"cache:{request.university_id}"
+        generic_cache_key = "cache:UNKNOWN"
+        
+        cache_size = redis_client.zcard(cache_key)
+        generic_cache_size = redis_client.zcard(generic_cache_key)
+        
+        total_entries_removed = 0
+        messages = []
+
+        if cache_size > 0:
+            redis_client.delete(cache_key)
+            total_entries_removed += cache_size
+            messages.append(f"Cache flushed for university_id: {request.university_id}")
+        else:
+            messages.append(f"No cache found for university_id: {request.university_id}")
+
+        if generic_cache_size > 0:
+            redis_client.delete(generic_cache_key)
+            total_entries_removed += generic_cache_size
+            messages.append(f"Generic cache flushed")
+        else:
+            messages.append("No generic cache found")
+
+        return {
+            "status": "success",
+            "message": ". ".join(messages),
+            "entries_removed": total_entries_removed
+        }
+        
+    except Exception as e:
+        print(f"Error in flush_university_cache: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error flushing university cache: {str(e)}")
 
 @router.post("/flush_all_data")
 async def flush_all_data(redis_client=Depends(get_redis_client)):
