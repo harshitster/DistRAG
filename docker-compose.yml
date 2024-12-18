@@ -29,32 +29,38 @@ services:
       - citus-network
 
   worker1:
-    image: "citusdata/citus:latest"
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
     platform: linux/amd64
     labels:
       - "com.citusdata.role=Worker"
     depends_on:
       - manager
     environment: *AUTH
-    command: "/wait-for-manager.sh"
     volumes:
       - healthcheck-volume:/healthcheck
       - citus-worker1-data:/var/lib/postgresql/data
+      - db-init-signal:/db-init-signal
+    command: ["/bin/bash", "/worker-entrypoint.sh"]
     networks:
       - citus-network
 
   worker2:
-    image: "citusdata/citus:latest"
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
     platform: linux/amd64
     labels:
       - "com.citusdata.role=Worker"
     depends_on:
       - manager
     environment: *AUTH
-    command: "/wait-for-manager.sh"
     volumes:
       - healthcheck-volume:/healthcheck
       - citus-worker2-data:/var/lib/postgresql/data
+      - db-init-signal:/db-init-signal
+    command: ["/bin/bash", "/worker-entrypoint.sh"]
     networks:
       - citus-network
 
