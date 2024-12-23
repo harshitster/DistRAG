@@ -42,6 +42,8 @@ services:
       - healthcheck-volume:/healthcheck
       - citus-worker1-data:/var/lib/postgresql/data
       - db-init-signal:/db-init-signal
+      - worker-signal:/worker-signal
+      - worker-backups:/backups
     command: ["/bin/bash", "/worker-entrypoint.sh"]
     networks:
       - citus-network
@@ -60,9 +62,49 @@ services:
       - healthcheck-volume:/healthcheck
       - citus-worker2-data:/var/lib/postgresql/data
       - db-init-signal:/db-init-signal
+      - worker-signal:/worker-signal
+      - worker-backups:/backups
     command: ["/bin/bash", "/worker-entrypoint.sh"]
     networks:
       - citus-network
+
+  worker-backup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    environment:
+      <<: *AUTH
+      WORKER_NAMES: "worker1,worker2"
+      ARCHIVE_INTERVAL: "300"
+      FULL_BACKUP_INTERVAL: "86400"
+      RETENTION_DAYS: "7"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - worker-backups:/backups
+      - worker-signal:/worker-signal
+    networks:
+      - citus-network
+    depends_on:
+      - worker1
+      - worker2
+
+  worker-recovery:
+    build: 
+      context: .
+      dockerfile: Dockerfile.recovery
+    environment:
+      <<: *AUTH
+      WORKER_NAMES: "worker1,worker2"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - worker-backups:/backups
+      - worker-signal:/worker-signal
+    networks:
+      - citus-network
+    depends_on:
+      - worker1
+      - worker2
+      - worker-backup
 
   manager:
     container_name: "citus_manager"
@@ -295,6 +337,8 @@ volumes:
   citus-worker2-data:
   pgadmin-data: 
   db-init-signal:
+  worker-signal:
   redis-data:
-
   python-init-logs:
+  worker-backups:
+    driver: local
