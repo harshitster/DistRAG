@@ -31,7 +31,7 @@ services:
   worker1:
     build:
       context: .
-      dockerfile: Dockerfile.worker
+      dockerfile: worker-node/Dockerfile
     platform: linux/amd64
     labels:
       - "com.citusdata.role=Worker"
@@ -44,14 +44,13 @@ services:
       - db-init-signal:/db-init-signal
       - worker-signal:/worker-signal
       - worker-backups:/backups
-    command: ["/bin/bash", "/worker-entrypoint.sh"]
     networks:
       - citus-network
 
   worker2:
     build:
       context: .
-      dockerfile: Dockerfile.worker
+      dockerfile: worker-node/Dockerfile
     platform: linux/amd64
     labels:
       - "com.citusdata.role=Worker"
@@ -64,7 +63,6 @@ services:
       - db-init-signal:/db-init-signal
       - worker-signal:/worker-signal
       - worker-backups:/backups
-    command: ["/bin/bash", "/worker-entrypoint.sh"]
     networks:
       - citus-network
 
