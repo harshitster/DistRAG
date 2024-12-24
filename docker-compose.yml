@@ -69,7 +69,7 @@ services:
   worker-backup:
     build:
       context: .
-      dockerfile: Dockerfile.backup
+      dockerfile: worker-backup/Dockerfile
     environment:
       <<: *AUTH
       WORKER_NAMES: "worker1,worker2"
@@ -89,7 +89,7 @@ services:
   worker-recovery:
     build: 
       context: .
-      dockerfile: Dockerfile.recovery
+      dockerfile: worker-recovery/Dockerfile
     environment:
       <<: *AUTH
       WORKER_NAMES: "worker1,worker2"
