@@ -130,7 +130,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./citus-servers.json:/pgadmin4/servers.json
+      - ./pgadmin/citus-servers.json:/pgadmin4/servers.json
       - pgadmin-data:/var/lib/pgadmin
     networks:
       - citus-network
