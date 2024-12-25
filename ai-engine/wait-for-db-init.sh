@@ -6,4 +6,4 @@ while [ ! -f /db-init-signal/db-init.done ]; do
 done
 echo "python-init completed. Starting service..."
 
-exec "$@"
+/app/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000

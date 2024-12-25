@@ -10,9 +10,8 @@ RUN apt-get update && \
 COPY db-engine/change_listener.py \
      db-engine/main.py \
      db-engine/notifier.py \
+     db-engine/requirements.txt \
      ./
-
-COPY requirements_db-engine.txt requirements.txt
 
 ENV CACHE_ENGINE_ENDPOINT="http://cache-engine:6380"
 ENV LLM_ENDPOINTS="http://llm1:8000,http://llm2:8000,http://llm3:8000"

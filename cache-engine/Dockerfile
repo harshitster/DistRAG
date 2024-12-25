@@ -3,10 +3,11 @@ FROM --platform=linux/amd64 python:3.11-slim
 WORKDIR /app
 
 RUN apt-get update && \
-    apt install -y libgl1-mesa-glx 
+    apt install -y libgl1-mesa-glx && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY cache-engine/ .
-COPY requirements_cache-engine.txt requirements.txt
 
 RUN python3 -m venv /app/venv && \
     . /app/venv/bin/activate && \
