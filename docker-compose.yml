@@ -148,7 +148,7 @@ services:
     volumes:
       - ./db-engine/db-init.py:/db-init.py
       - ./db-engine/schema.sql:/schema.sql
-      - ./db-init.sh:/db-init.sh
+      - ./db-engine/db-init.sh:/db-init.sh
       - db-init-signal:/db-init-signal
       - python-init-logs:/app/db-store
     command: >
