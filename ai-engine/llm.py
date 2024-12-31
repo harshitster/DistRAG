@@ -5,6 +5,7 @@ import time
 import sqlalchemy
 import chromadb # type: ignore
 import queue
+import yaml
 from collections import deque
 from contextlib import ExitStack
 from llama_index.llms.gemini import Gemini # type: ignore
@@ -58,6 +59,19 @@ class LLM:
         
         self.logger = logger
 
+    def load_api_keys(self):
+        api_keys_path = os.environ['API_KEYS_PATH']
+        llm_id = os.environ['LLM_ID']
+
+        with open(api_keys_path, 'r') as f:
+            config = yaml.safe_load(f)
+
+        instance_config = config['llm_instances'].get(llm_id)
+        if not instance_config:
+            raise ValueError(f"No configuration found for LLM ID: {llm_id}")
+        
+        return instance_config['google_api_keys']
+
     def load_environment_variables(self):
         try:
             self.host = os.environ['POSTGRES_HOST']
@@ -66,11 +80,17 @@ class LLM:
             self.password = os.environ['POSTGRES_PASSWORD']
             self.dbname = os.environ['POSTGRES_DB']
 
-            self.google_api_keys = os.environ['GOOGLE_API_KEYS'].strip().split('\n')
+            self.google_api_keys = self.load_api_keys()
             self.llm_model = os.environ['LLM_MODEL']
             self.embedding_model = os.environ['EMBED_MODEL']
 
             self.logger.info("Environment Variables Loaded.")
+        except FileNotFoundError as e:
+            self.logger.error(f"API keys configuration file not found: {e}")
+            raise
+        except yaml.YAMLError as e:
+            self.logger.error(f"Error parsing API keys configuration: {e}")
+            raise
         except AttributeError as e:
             self.logger.error(f"Configuration error: {e}")
             raise

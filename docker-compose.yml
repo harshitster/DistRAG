@@ -190,20 +190,11 @@ services:
       dockerfile: ai-engine/Dockerfile
     volumes:
       - db-init-signal:/db-init-signal
+      - ./ai-engine/api-keys.yml:/app/api-keys.yml
     environment: 
       <<: *POSTGRES
-      LLM_ID: 18001
-      GOOGLE_API_KEYS: |- 
-        AIzaSyAPiXYd9s5HNXQO42b1PD0eoSWaybAxTLs
-        AIzaSyDMX5A8hwDQMcXz1sCgY7l0SXAoEOmzXDc
-        AIzaSyC7-4rCi0AuSbXy2p82LmaoncFoCjpd5_c
-        AIzaSyCkWUjDGeTxsXi8U26IHPgRA5efMrjLcsc
-        AIzaSyDiFBuqC6V6ekMrdUdynzdMiLmartIKFxM
-        AIzaSyBa4ruWUjsiXVqfJy1MKMJt8Bg1EBE4wD0 
-        AIzaSyAdmTsDC1W02BscksBf20z6KWng5oV5fc8
-        AIzaSyD74Vd0qx8CwEjBKS_PbjI-FJwiuSzm2wk
-        AIzaSyBiBuzOGjtfKnxh6xluon--1nKxalUjM7s
-        AIzaSyDz8s-ATZAc4f2AuHhasa67hbEmDcHrIpc
+      LLM_ID: "18001"
+      API_KEYS_PATH: /app/api-keys.yml
     ports:
       - "8001:8000"
     networks:
@@ -222,20 +213,11 @@ services:
       dockerfile: ai-engine/Dockerfile
     volumes:
       - db-init-signal:/db-init-signal
+      - ./ai-engine/api-keys.yml:/app/api-keys.yml
     environment: 
       <<: *POSTGRES
-      LLM_ID: 18002
-      GOOGLE_API_KEYS: |-
-        AIzaSyDz8s-ATZAc4f2AuHhasa67hbEmDcHrIpc
-        AIzaSyBiBuzOGjtfKnxh6xluon--1nKxalUjM7s
-        AIzaSyD74Vd0qx8CwEjBKS_PbjI-FJwiuSzm2wk
-        AIzaSyAdmTsDC1W02BscksBf20z6KWng5oV5fc8
-        AIzaSyBa4ruWUjsiXVqfJy1MKMJt8Bg1EBE4wD0
-        AIzaSyC6g4God2jExDvEk7TSARMGLRsHEsG-Qdo
-        AIzaSyCNYCrIzeTsSCucltIehjuonTB5_ZIBtrk
-        AIzaSyDP5kSQU-wAmHOvSLKR_V7F5bNJfbrB1SM
-        AIzaSyDT8-aMqA8t8Vc9Fi3U8AX1ZcLRh2XlVBA
-        AIzaSyCgjQW8Mw8PrQDJxHnmWJKe5FCMSdVqWh0
+      LLM_ID: "18002"
+      API_KEYS_PATH: /app/api-keys.yml
     ports:
       - "8002:8000"
     networks:
@@ -254,20 +236,11 @@ services:
       dockerfile: ai-engine/Dockerfile
     volumes:
       - db-init-signal:/db-init-signal
+      - ./ai-engine/api-keys.yml:/app/api-keys.yml
     environment: 
       <<: *POSTGRES
-      LLM_ID: 18003
-      GOOGLE_API_KEYS: |-
-        AIzaSyCjsA5KdO_ifpsSbGJRjz0bnaJnYFHjUlo
-        AIzaSyBznkEfFHx1Z1XEMBTjsplKZixfS47f9dI
-        AIzaSyB-_IZgCbpsyHV4yQh3ykmbQ8Tdfu9Fjns
-        AIzaSyDoCUbvOSxMVxlhsmAfmtDoJbCDgeeTLj0
-        AIzaSyC6p3wGcFDAaSrvDbt_WPSejVooa-olZDk
-        AIzaSyBzlG4GVJ_Os0yTfZpoF4Pccx_EJR36Qpo
-        AIzaSyDU9ZXAAmmO7dizaySeRlLZ-rDdR67KPVw
-        AIzaSyCKunMu-CjXvJzHlYliQIuAWmizwJTI8Qw
-        AIzaSyDwB8I3GPYy88uo2qDs-x7nlhTE6tHXZ6c
-        AIzaSyDu0VaC2TZpf5XGAeKRsI92gt0Tzdo60uw
+      LLM_ID: "18003"
+      API_KEYS_PATH: /app/api-keys.yml
     ports:
       - "8003:8000"
     networks:
