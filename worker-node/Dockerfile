@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 citusdata/citus:latest
+FROM citusdata/citus:latest
 
 COPY worker-node/wait-for-manager.sh /wait-for-manager.sh
 COPY worker-node/wait-for-db-init.sh /wait-for-db-init.sh
