@@ -3,8 +3,8 @@ networks:
     driver: bridge
 
 services:
-  master:
-    container_name: "citus_master"
+  pg_master:
+    container_name: "pg_master"
     platform: linux/amd64
     image: "citusdata/citus:latest"
     ports:
@@ -28,7 +28,8 @@ services:
     networks:
       - citus-network
 
-  worker1:
+  pg_worker_1:
+    container_name: "pg_worker_1"
     build:
       context: .
       dockerfile: worker-node/Dockerfile
@@ -36,7 +37,7 @@ services:
     labels:
       - "com.citusdata.role=Worker"
     depends_on:
-      - manager
+      - cluster_manager
     environment: *AUTH
     volumes:
       - healthcheck-volume:/healthcheck
@@ -47,7 +48,8 @@ services:
     networks:
       - citus-network
 
-  worker2:
+  pg_worker_2:
+    container_name: "pg_worker_2"
     build:
       context: .
       dockerfile: worker-node/Dockerfile
@@ -55,7 +57,7 @@ services:
     labels:
       - "com.citusdata.role=Worker"
     depends_on:
-      - manager
+      - cluster_manager
     environment: *AUTH
     volumes:
       - healthcheck-volume:/healthcheck
@@ -66,14 +68,14 @@ services:
     networks:
       - citus-network
 
-  worker-backup:
+  backup_service:
+    container_name: "pg_backup_service"
     build:
       context: .
       dockerfile: worker-backup/Dockerfile
-    platform: linux/amd64
     environment:
       <<: *AUTH
-      WORKER_NAMES: "worker1,worker2"
+      WORKER_NAMES: "pg_worker_1,pg_worker_2"
       ARCHIVE_INTERVAL: "300"
       FULL_BACKUP_INTERVAL: "86400"
       RETENTION_DAYS: "7"
@@ -84,17 +86,17 @@ services:
     networks:
       - citus-network
     depends_on:
-      - worker1
-      - worker2
+      - pg_worker_1
+      - pg_worker_2
 
-  worker-recovery:
+  recovery_service:
+    container_name: "pg_recovery_service"
     build: 
       context: .
       dockerfile: worker-recovery/Dockerfile
-    platform: linux/amd64
     environment:
       <<: *AUTH
-      WORKER_NAMES: "worker1,worker2"
+      WORKER_NAMES: "pg_worker_1,pg_worker_2"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - worker-backups:/backups
@@ -102,27 +104,29 @@ services:
     networks:
       - citus-network
     depends_on:
-      - worker1
-      - worker2
-      - worker-backup
+      - pg_worker_1
+      - pg_worker_2
+      - backup_service
 
-  manager:
-    container_name: "citus_manager"
+  cluster_manager:
+    container_name: "pg_cluster_manager"
     platform: linux/amd64
     image: "citusdata/membership-manager:latest"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - healthcheck-volume:/healthcheck
     depends_on:
-      master:
+      pg_master:
         condition: service_healthy
-    environment: *AUTH
+    environment:
+      <<: *AUTH
+      CITUS_HOST: pg_master
     networks:
       - citus-network
     command: sh -c "touch /healthcheck/manager-ready && python /manager.py"
 
-  pgadmin:
-    container_name: pgadmin
+  pg_admin:
+    container_name: "pg_admin"
     platform: linux/amd64
     image: "dpage/pgadmin4:latest"
     environment:
@@ -137,14 +141,15 @@ services:
     networks:
       - citus-network
     depends_on:
-      master:
+      pg_master:
         condition: service_healthy
-      worker1:
+      pg_worker_1:
         condition: service_started
-      worker2:
+      pg_worker_2:
         condition: service_started
 
-  python-init:
+  db_init:
+    container_name: "pg_db_init"
     image: python:3.11-slim
     platform: linux/amd64
     volumes:
@@ -163,7 +168,7 @@ services:
         /db-init.sh
       "
     environment: &POSTGRES
-      POSTGRES_HOST: master
+      POSTGRES_HOST: pg_master
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -171,27 +176,27 @@ services:
     networks:
       - citus-network
     depends_on:
-      master:
+      pg_master:
         condition: service_healthy
 
-  db-engine:
+  db_engine:
+    container_name: "db_engine"
     build:
       context: .
       dockerfile: db-engine/Dockerfile.db-engine
-    platform: linux/amd64
     environment:
       <<: *POSTGRES
     networks:
       - citus-network
     depends_on:
-      master:
+      pg_master:
         condition: service_healthy
 
-  llm-1:
+  ai_engine_1:
+    container_name: "ai_engine_1"
     build: 
       context: .
       dockerfile: ai-engine/Dockerfile
-    platform: linux/amd64
     volumes:
       - db-init-signal:/db-init-signal
       - ./ai-engine/config.yml:/app/config.yml
@@ -204,18 +209,18 @@ services:
     networks:
       - citus-network
     depends_on:
-      master:
+      pg_master:
         condition: service_healthy
-      python-init:
+      db_init:
         condition: service_completed_successfully
-      cache-engine:
+      cache_engine:
         condition: service_started
 
-  llm-2:
+  ai_engine_2:
+    container_name: "ai_engine_2"
     build:
       context: .
       dockerfile: ai-engine/Dockerfile
-    platform: linux/amd64
     volumes:
       - db-init-signal:/db-init-signal
       - ./ai-engine/config.yml:/app/config.yml
@@ -228,18 +233,18 @@ services:
     networks:
       - citus-network
     depends_on:
-      master: 
-        condition: service_started
-      python-init:
+      pg_master: 
+        condition: service_healthy
+      db_init:
         condition: service_completed_successfully
-      cache-engine:
+      cache_engine:
         condition: service_started
 
-  llm-3:
+  ai_engine_3:
+    container_name: "ai_engine_3"
     build:
       context: .
       dockerfile: ai-engine/Dockerfile
-    platform: linux/amd64
     volumes:
       - db-init-signal:/db-init-signal
       - ./ai-engine/config.yml:/app/config.yml
@@ -252,24 +257,25 @@ services:
     networks:
       - citus-network
     depends_on:
-      master: 
-        condition: service_started
-      python-init:
+      pg_master: 
+        condition: service_healthy
+      db_init:
         condition: service_completed_successfully
-      cache-engine:
+      cache_engine:
         condition: service_started
 
-  nginx:
+  load_balancer:
+    container_name: "ai-engine_load_balancer"
     image: nginx:latest
     platform: linux/amd64
     volumes:
       - ./nginx-ai-engine/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      llm-1:
+      ai_engine_1:
         condition: service_started
-      llm-2:
+      ai_engine_2:
         condition: service_started
-      llm-3:
+      ai_engine_3:
         condition: service_started
     ports:
       - "80:80"
@@ -277,6 +283,7 @@ services:
       - citus-network
 
   redis:
+    container_name: "redis_cache"
     platform: linux/amd64
     image: redis/redis-stack-server:latest
     ports:
@@ -286,11 +293,11 @@ services:
     networks:
       - citus-network
 
-  cache-engine:
+  cache_engine:
+    container_name: "cache_engine"
     build:
       context: .
       dockerfile: cache-engine/Dockerfile
-    platform: linux/amd64
     environment:
       HOST: redis
       PORT: 6379
@@ -302,9 +309,9 @@ services:
       redis:
         condition: service_started
 
-  log-access:
+  log_monitor:
+    container_name: "log_monitor"
     image: alpine
-    platform: linux/amd64
     volumes:
       - python-init-logs:/logs
     command: tail -f /dev/null

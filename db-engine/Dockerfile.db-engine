@@ -13,8 +13,8 @@ COPY db-engine/change_listener.py \
      db-engine/requirements.txt \
      ./
 
-ENV CACHE_ENGINE_ENDPOINT="http://cache-engine:6380"
-ENV LLM_ENDPOINTS="http://llm1:8000,http://llm2:8000,http://llm3:8000"
+ENV CACHE_ENGINE_ENDPOINT="http://cache_engine:6380"
+ENV LLM_ENDPOINTS="http://ai_engine_1:8000,http://ai_engine_2:8000,http://ai_engine_3:8000"
 
 RUN python3 -m venv /app/venv && \
     . /app/venv/bin/activate && \

@@ -3,7 +3,7 @@
         "1": {
             "Name": "Citus Master",
             "Group": "Citus Cluster",
-            "Host": "master",
+            "Host": "pg_master",
             "Port": 5432,
             "MaintenanceDB": "postgres",
             "Username": "postgres",
@@ -12,7 +12,7 @@
         "2": {
             "Name": "Citus Worker 1",
             "Group": "Citus Cluster",
-            "Host": "worker1",
+            "Host": "pg_worker_1",
             "Port": 5432,
             "MaintenanceDB": "postgres",
             "Username": "postgres",
@@ -21,7 +21,7 @@
         "3": {
             "Name": "Citus Worker 2",
             "Group": "Citus Cluster",
-            "Host": "worker2",
+            "Host": "pg_worker_2",
             "Port": 5432,
             "MaintenanceDB": "postgres",
             "Username": "postgres",

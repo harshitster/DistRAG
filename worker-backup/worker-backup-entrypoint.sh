@@ -15,8 +15,8 @@ attempt=1
 
 while [ $attempt -le $max_attempts ]; do
     # Check if backup directories exist and contain data for both workers
-    if [ -d "/backups/worker1" ] && [ -d "/backups/worker2" ] && \
-       [ "$(ls -A /backups/worker1)" ] && [ "$(ls -A /backups/worker2)" ]; then
+    if [ -d "/backups/pg_worker_1" ] && [ -d "/backups/pg_worker_2" ] && \
+       [ "$(ls -A /backups/pg_worker_1)" ] && [ "$(ls -A /backups/pg_worker_2)" ]; then
         echo "Initial backup completed successfully. Creating signal file..."
         touch /worker-signal/backup-init.done
         break

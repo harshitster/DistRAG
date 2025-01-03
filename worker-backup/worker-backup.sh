@@ -3,7 +3,7 @@
 set -e
 
 # Configuration
-WORKERS=${WORKER_NAMES:-"worker1,worker2"}
+WORKERS=${WORKER_NAMES:-"pg_worker_1,pg_worker_2"}
 ARCHIVE_INTERVAL=${ARCHIVE_INTERVAL:-300}
 FULL_BACKUP_INTERVAL=${FULL_BACKUP_INTERVAL:-86400}  # 24 hours
 BACKUP_DIR="/backups"

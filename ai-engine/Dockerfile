@@ -20,6 +20,6 @@ RUN python3 -m venv /app/venv && \
 ENV PYTHONPATH=/app
 ENV LLM_MODEL="models/gemini-1.5-pro"
 ENV EMBED_MODEL="models/text-embedding-004"
-ENV CACHE_ENGINE_URL="http://cache-engine:6380"
+ENV CACHE_ENGINE_URL="http://cache_engine:6380"
 
 CMD  ["bash", "/wait-for-db-init.sh"]
