@@ -60,13 +60,13 @@ class LLM:
         self.logger = logger
 
     def load_api_keys(self):
-        api_keys_path = os.environ['API_KEYS_PATH']
+        config_file = os.environ['CONFIG_FILE']
         llm_id = os.environ['LLM_ID']
 
-        with open(api_keys_path, 'r') as f:
+        with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
 
-        instance_config = config['llm_instances'].get(llm_id)
+        instance_config = config['api_keys'].get(llm_id)
         if not instance_config:
             raise ValueError(f"No configuration found for LLM ID: {llm_id}")
         
@@ -217,9 +217,16 @@ class LLM:
 
             query_pipeline, llm, qb_lock = self.get_next_pipeline()
             Settings.llm = llm
-            
-            with qb_lock:
-                response = str(query_pipeline.run(query=query_text))
+
+            response = False
+            while not response:
+                try:
+                    with qb_lock:
+                        response = str(query_pipeline.run(query=query_text))
+                except Exception as e:
+                    print(f"Received Error: {e}. Retrying with different pipeline.")
+                    query_pipeline, llm, qb_lock = self.get_next_pipeline()
+                    Settings.llm = llm
 
             current_version = self.version
             result.append((response, current_version))

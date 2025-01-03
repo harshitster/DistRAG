@@ -70,6 +70,7 @@ services:
     build:
       context: .
       dockerfile: worker-backup/Dockerfile
+    platform: linux/amd64
     environment:
       <<: *AUTH
       WORKER_NAMES: "worker1,worker2"
@@ -90,6 +91,7 @@ services:
     build: 
       context: .
       dockerfile: worker-recovery/Dockerfile
+    platform: linux/amd64
     environment:
       <<: *AUTH
       WORKER_NAMES: "worker1,worker2"
@@ -176,6 +178,7 @@ services:
     build:
       context: .
       dockerfile: db-engine/Dockerfile.db-engine
+    platform: linux/amd64
     environment:
       <<: *POSTGRES
     networks:
@@ -188,13 +191,14 @@ services:
     build: 
       context: .
       dockerfile: ai-engine/Dockerfile
+    platform: linux/amd64
     volumes:
       - db-init-signal:/db-init-signal
-      - ./ai-engine/api-keys.yml:/app/api-keys.yml
+      - ./ai-engine/config.yml:/app/config.yml
     environment: 
       <<: *POSTGRES
       LLM_ID: "18001"
-      API_KEYS_PATH: /app/api-keys.yml
+      CONFIG_FILE: /app/config.yml
     ports:
       - "8001:8000"
     networks:
@@ -211,13 +215,14 @@ services:
     build:
       context: .
       dockerfile: ai-engine/Dockerfile
+    platform: linux/amd64
     volumes:
       - db-init-signal:/db-init-signal
-      - ./ai-engine/api-keys.yml:/app/api-keys.yml
+      - ./ai-engine/config.yml:/app/config.yml
     environment: 
       <<: *POSTGRES
       LLM_ID: "18002"
-      API_KEYS_PATH: /app/api-keys.yml
+      CONFIG_FILE: /app/config.yml
     ports:
       - "8002:8000"
     networks:
@@ -234,13 +239,14 @@ services:
     build:
       context: .
       dockerfile: ai-engine/Dockerfile
+    platform: linux/amd64
     volumes:
       - db-init-signal:/db-init-signal
-      - ./ai-engine/api-keys.yml:/app/api-keys.yml
+      - ./ai-engine/config.yml:/app/config.yml
     environment: 
       <<: *POSTGRES
       LLM_ID: "18003"
-      API_KEYS_PATH: /app/api-keys.yml
+      CONFIG_FILE: /app/config.yml
     ports:
       - "8003:8000"
     networks:
@@ -284,6 +290,7 @@ services:
     build:
       context: .
       dockerfile: cache-engine/Dockerfile
+    platform: linux/amd64
     environment:
       HOST: redis
       PORT: 6379
@@ -297,6 +304,7 @@ services:
 
   log-access:
     image: alpine
+    platform: linux/amd64
     volumes:
       - python-init-logs:/logs
     command: tail -f /dev/null

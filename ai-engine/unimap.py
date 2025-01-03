@@ -1,5 +1,6 @@
 import json
 import time
+import os
 import yaml
 from collections import deque
 from llama_index.core import Document, VectorStoreIndex, Settings
@@ -7,8 +8,8 @@ from llama_index.llms.gemini import Gemini
 from llama_index.embeddings.gemini import GeminiEmbedding
 
 class UniMap:
-    def __init__(self, config_file='unimap_config.yml', api_file='unimap_api.yml'):        
-        self.load_config(config_file, api_file)
+    def __init__(self):        
+        self.load_config()
         
         self.current_llm = None
         self.current_embedding_model = None
@@ -16,16 +17,16 @@ class UniMap:
         
         self.index = self.create_index()
 
-    def load_config(self, config_file, api_file):
-        with open(config_file, 'r') as file:
-            config = yaml.safe_load(file)
-        with open(api_file, 'r') as file:
-            api_keys = yaml.safe_load(file)
+    def load_config(self):
+        config_file = os.environ['CONFIG_FILE']
 
-        self.google_api_keys = deque(api_keys['google_api_keys'])
+        with open(config_file, 'r') as f:
+            config = yaml.safe_load(f)
+
+        self.google_api_keys = deque(config['api_keys']['unimap']['google_api_keys'])
         self.hashmap = config['universities']
-        self.llm_model = config['llm_model']
-        self.embedding_model = config['embedding_model']
+        self.llm_model = "models/gemini-1.0-pro"
+        self.embedding_model = "models/text-embedding-004"
 
     def load_next_model(self):
         if not self.google_api_keys:
