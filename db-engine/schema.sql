@@ -2,6 +2,10 @@ BEGIN;
 
 SET LOCAL citus.multi_shard_modify_mode TO 'sequential';
 
+SELECT citus_set_coordinator_host('pg_master');
+SELECT citus_add_node('pg_worker_1', 5432);
+SELECT citus_add_node('pg_worker_2', 5432);
+
 CREATE TABLE university(
     uni_id VARCHAR(5),
     university_name VARCHAR(25),

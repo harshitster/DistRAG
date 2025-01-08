@@ -7,6 +7,7 @@ services:
     container_name: "pg_master"
     platform: linux/amd64
     image: "citusdata/citus:latest"
+    hostname: pg_master
     ports:
       - "5432:5432"
     labels:
@@ -150,23 +151,13 @@ services:
 
   db_init:
     container_name: "pg_db_init"
-    image: python:3.11-slim
+    build:
+      context: .
+      dockerfile: db-engine/Dockerfile.db-init
     platform: linux/amd64
     volumes:
-      - ./db-engine/db-init.py:/db-init.py
-      - ./db-engine/schema.sql:/schema.sql
-      - ./db-engine/db-init.sh:/db-init.sh
       - db-init-signal:/db-init-signal
       - python-init-logs:/app/db-store
-    command: >
-      sh -c "
-        python3 -m venv /venv &&
-        . /venv/bin/activate &&
-        pip install --upgrade pip --quiet &&
-        pip install --no-cache-dir --quiet psycopg2-binary==2.9.9 &&
-        chmod +x /db-init.sh
-        /db-init.sh
-      "
     environment: &POSTGRES
       POSTGRES_HOST: pg_master
       POSTGRES_PORT: 5432
@@ -178,6 +169,11 @@ services:
     depends_on:
       pg_master:
         condition: service_healthy
+      pg_worker_1:
+        condition: service_healthy
+      pg_worker_2:
+        condition: service_healthy
+      
 
   db_engine:
     container_name: "db_engine"
