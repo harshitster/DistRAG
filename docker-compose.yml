@@ -182,6 +182,7 @@ services:
       dockerfile: db-engine/Dockerfile.db-engine
     environment:
       <<: *POSTGRES
+      UVICORN_PORT: 6381
     networks:
       - citus-network
     depends_on:
