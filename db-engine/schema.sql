@@ -154,3 +154,37 @@ CREATE TABLE purchased(
     FOREIGN KEY (uni_id, item_name) REFERENCES item(uni_id, name)
 );
 SELECT create_distributed_table('purchased', 'uni_id');
+
+CREATE OR REPLACE FUNCTION notify_change(
+    p_university_id VARCHAR(5),
+    p_table_name TEXT,
+    p_operation TEXT
+) RETURNS void AS $$
+BEGIN
+    PERFORM pg_notify('data_changes', json_build_object(
+        'university_id', p_university_id,
+        'table_name', p_table_name,
+        'operation', p_operation
+    )::text);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION notify_schema_change()
+RETURNS event_trigger AS $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN SELECT * FROM pg_event_trigger_ddl_commands() LOOP
+        PERFORM pg_notify('schema_changes', json_build_object(
+            'command_tag', r.command_tag,
+            'object_type', r.object_type,
+            'schema_name', r.schema_name,
+            'object_identity', r.object_identity
+        )::text);
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE EVENT TRIGGER schema_change_trigger
+ON ddl_command_end
+EXECUTE FUNCTION notify_schema_change();
