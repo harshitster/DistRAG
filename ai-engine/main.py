@@ -78,8 +78,8 @@ async def query(query_request: QueryRequest):
         logger.info("Checking for Cache...")
         cached_response = await get_cached_response(university_id, query_request.query)
         
-        if cached_response:
-            logger.info("Cache hit!")
+        if cached_response and cached_response[0]["similarity"] >= 0.85:
+            logger.info(f"Cache hit with similarity: {cached_response[0]['similarity']}")
             return {
                 "response": cached_response[0]["response"],
                 "version": "cached",
@@ -88,7 +88,12 @@ async def query(query_request: QueryRequest):
                 "university_id": university_id
             }
         
-        logger.info("Cache miss. Getting response from ai-engine...")
+        if cached_response:
+            logger.info(f"Cache miss due to low similarity: {cached_response[0]['similarity']}")
+        else:
+            logger.info("Cache miss: No cached response found")
+            
+        logger.info("Getting response from ai-engine...")
         response, version = llm_instance.query(query_request.query)
         
         logger.info("Caching the response...")
