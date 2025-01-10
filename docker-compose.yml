@@ -305,6 +305,27 @@ services:
       redis:
         condition: service_started
 
+  data_router:
+    container_name: data-router
+    build: 
+      context: .
+      dockerfile: data-router/Dockerfile
+    environment:
+      <<: *POSTGRES
+    volumes:
+      - worker-signal:/worker-signal
+    ports:
+      - "8085:8085"
+    networks:
+      - citus-network
+    depends_on:
+      pg_master:
+        condition: service_healthy
+      pg_worker_1:
+        condition: service_healthy
+      pg_worker_2:
+        condition: service_healthy    
+
   log_monitor:
     container_name: "log_monitor"
     image: alpine
