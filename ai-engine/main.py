@@ -78,7 +78,7 @@ async def query(query_request: QueryRequest):
         logger.info("Checking for Cache...")
         cached_response = await get_cached_response(university_id, query_request.query)
         
-        if cached_response and cached_response[0]["similarity"] >= 0.85:
+        if cached_response and cached_response[0]["similarity"] >= 0.60:
             logger.info(f"Cache hit with similarity: {cached_response[0]['similarity']}")
             return {
                 "response": cached_response[0]["response"],

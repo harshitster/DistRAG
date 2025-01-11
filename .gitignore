@@ -2,6 +2,7 @@ ai-engine/config.yml
 ai-engine/unimap_api.yml
 ai-engine/unimap_config.yml
 ai-engine/api_check.py
+db-engine/routes.py
 .gitattributes
 *.env
 .DS_Store

@@ -15,6 +15,20 @@ DB_PARAMS = {
     "password": os.environ['POSTGRES_PASSWORD']
 }
 
+class DatabaseOperations:
+    @staticmethod
+    def execute_with_notifications(cur, sql, params, university_id, table_name, operation, notify=True):
+        """Execute SQL with optional notifications using an existing cursor"""
+        try:
+            cur.execute(sql, params)
+            if notify:
+                cur.execute(
+                    "SELECT notify_change(%s, %s, %s)",
+                    (university_id, table_name, operation)
+                )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
 @contextmanager
 def get_db_connection():
     conn = psycopg2.connect(**DB_PARAMS)
@@ -28,18 +42,17 @@ def insert_university(university: University):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute(
-                    """
+                sql = """
                     INSERT INTO university (uni_id, university_name, city, state)
                     VALUES (%s, %s, %s, %s)
-                    """,
-                    (university.uni_id, university.university_name, university.city, university.state)
+                """
+                params = (university.uni_id, university.university_name, university.city, university.state)
+                DatabaseOperations.execute_with_notifications(
+                    cur, sql, params, university.uni_id, "university", "INSERT", notify=False
                 )
                 conn.commit()
-                return {
-                    "message": "University Added Successfully"
-                }
-            except psycopg2.Error as e:
+                return {"message": "University Added Successfully"}
+            except Exception as e:
                 conn.rollback()
                 raise HTTPException(status_code=400, detail=str(e))
             
@@ -82,15 +95,15 @@ def delete_university(uni_id: str):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute(
-                    "DELETE FROM university WHERE uni_id = %s",
-                    (uni_id,)
+                sql = "DELETE FROM university WHERE uni_id = %s"
+                DatabaseOperations.execute_with_notifications(
+                    cur, sql, (uni_id,), uni_id, "university", "DELETE", notify=False
                 )
                 if cur.rowcount == 0:
                     raise HTTPException(status_code=404, detail="University not found")
                 conn.commit()
                 return {"message": "University deleted successfully"}
-            except psycopg2.Error as e:
+            except Exception as e:
                 conn.rollback()
                 raise HTTPException(status_code=400, detail=str(e))
             
@@ -99,16 +112,15 @@ def create_fest(fest: Fest):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute(
-                    """
+                sql = """
                     INSERT INTO fest (fest_id, fest_name, year, head_teamID, uni_id)
                     VALUES (%s, %s, %s, %s, %s)
-                    """,
-                    (fest.fest_id, fest.fest_name, fest.year, fest.head_teamID, fest.uni_id)
-                )
+                """
+                params = (fest.fest_id, fest.fest_name, fest.year, fest.head_teamID, fest.uni_id)
+                DatabaseOperations.execute_with_notifications(cur, sql, params, fest.uni_id, "fest", "INSERT")
                 conn.commit()
                 return {"message": "Fest created successfully"}
-            except psycopg2.Error as e:
+            except Exception as e:
                 conn.rollback()
                 raise HTTPException(status_code=400, detail=str(e))
 
@@ -134,35 +146,33 @@ def create_team(team: Team):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute(
-                    """
+                sql = """
                     INSERT INTO team (team_id, team_name, team_type, fest_id, uni_id)
                     VALUES (%s, %s, %s, %s, %s)
-                    """,
-                    (team.team_id, team.team_name, team.team_type, team.fest_id, team.uni_id)
-                )
+                """
+                params = (team.team_id, team.team_name, team.team_type, team.fest_id, team.uni_id)
+                DatabaseOperations.execute_with_notifications(cur, sql, params, team.uni_id, "team", "INSERT")
                 conn.commit()
                 return {"message": "Team created successfully"}
-            except psycopg2.Error as e:
+            except Exception as e:
                 conn.rollback()
                 raise HTTPException(status_code=400, detail=str(e))
-
+            
 @router.post("/members/")
 def create_member(member: Member):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute(
-                    """
+                sql = """
                     INSERT INTO member (mem_id, mem_name, DOB, super_memID, team_id, uni_id)
                     VALUES (%s, %s, %s, %s, %s, %s)
-                    """,
-                    (member.mem_id, member.mem_name, member.DOB, 
-                     member.super_memID, member.team_id, member.uni_id)
-                )
+                """
+                params = (member.mem_id, member.mem_name, member.DOB, 
+                         member.super_memID, member.team_id, member.uni_id)
+                DatabaseOperations.execute_with_notifications(cur, sql, params, member.uni_id, "member", "INSERT")
                 conn.commit()
                 return {"message": "Member created successfully"}
-            except psycopg2.Error as e:
+            except Exception as e:
                 conn.rollback()
                 raise HTTPException(status_code=400, detail=str(e))
 
@@ -171,18 +181,17 @@ def create_event(event: Event):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute(
-                    """
+                sql = """
                     INSERT INTO event (event_id, event_name, building, floor, 
                                      room_no, price, team_id, uni_id)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                    """,
-                    (event.event_id, event.event_name, event.building, 
-                     event.floor, event.room_no, event.price, event.team_id, event.uni_id)
-                )
+                """
+                params = (event.event_id, event.event_name, event.building, 
+                         event.floor, event.room_no, event.price, event.team_id, event.uni_id)
+                DatabaseOperations.execute_with_notifications(cur, sql, params, event.uni_id, "event", "INSERT")
                 conn.commit()
                 return {"message": "Event created successfully"}
-            except psycopg2.Error as e:
+            except Exception as e:
                 conn.rollback()
                 raise HTTPException(status_code=400, detail=str(e))
 
@@ -191,16 +200,15 @@ def create_event_conduction(conduction: EventConduction):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute(
-                    """
+                sql = """
                     INSERT INTO event_conduction (event_id, date_of_conduction, uni_id)
                     VALUES (%s, %s, %s)
-                    """,
-                    (conduction.event_id, conduction.date_of_conduction, conduction.uni_id)
-                )
+                """
+                params = (conduction.event_id, conduction.date_of_conduction, conduction.uni_id)
+                DatabaseOperations.execute_with_notifications(cur, sql, params, conduction.uni_id, "event_conduction", "INSERT")
                 conn.commit()
                 return {"message": "Event conduction created successfully"}
-            except psycopg2.Error as e:
+            except Exception as e:
                 conn.rollback()
                 raise HTTPException(status_code=400, detail=str(e))
 
@@ -209,17 +217,16 @@ def create_participant(participant: Participant):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute(
-                    """
+                sql = """
                     INSERT INTO participant (SRN, name, department, semester, gender, uni_id)
                     VALUES (%s, %s, %s, %s, %s, %s)
-                    """,
-                    (participant.SRN, participant.name, participant.department,
-                     participant.semester, participant.gender, participant.uni_id)
-                )
+                """
+                params = (participant.SRN, participant.name, participant.department,
+                         participant.semester, participant.gender, participant.uni_id)
+                DatabaseOperations.execute_with_notifications(cur, sql, params, participant.uni_id, "participant", "INSERT")
                 conn.commit()
                 return {"message": "Participant created successfully"}
-            except psycopg2.Error as e:
+            except Exception as e:
                 conn.rollback()
                 raise HTTPException(status_code=400, detail=str(e))
 
@@ -228,17 +235,16 @@ def create_registration(registration: Registration):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute(
-                    """
+                sql = """
                     INSERT INTO registration (event_id, SRN, registration_id, uni_id)
                     VALUES (%s, %s, %s, %s)
-                    """,
-                    (registration.event_id, registration.SRN, 
-                     registration.registration_id, registration.uni_id)
-                )
+                """
+                params = (registration.event_id, registration.SRN, 
+                         registration.registration_id, registration.uni_id)
+                DatabaseOperations.execute_with_notifications(cur, sql, params, registration.uni_id, "registration", "INSERT")
                 conn.commit()
                 return {"message": "Registration created successfully"}
-            except psycopg2.Error as e:
+            except Exception as e:
                 conn.rollback()
                 raise HTTPException(status_code=400, detail=str(e))
 
