@@ -4,5 +4,8 @@ ai-engine/unimap_config.yml
 ai-engine/api_check.py
 db-engine/routes.py
 .gitattributes
+docker-compose.override.yml
+pgadmin/versions
+pgadmin/citus-servers.latest.json
 *.env
 .DS_Store
