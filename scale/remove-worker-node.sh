@@ -104,3 +104,7 @@ echo "Worker node removal complete!"
 echo "To verify the cluster status, run:"
 echo "docker exec pg_master psql -U postgres -d citus -c '\dx'"
 echo "docker exec pg_master psql -U postgres -d citus -c 'SELECT * FROM pg_dist_node;'"
+
+echo "Removing worker node from pgadmin service..."
+scale/remove-worker-pgadmin.sh "$@"
+echo "Worker node removed to pgadmin service."

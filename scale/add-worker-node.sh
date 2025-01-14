@@ -75,3 +75,7 @@ echo "Worker nodes have been successfully added to the cluster!"
 echo "To verify the cluster status, run:"
 echo "docker exec pg_master psql -U postgres -d citus -c '\dx'"
 echo "docker exec pg_master psql -U postgres -d citus -c 'SELECT * FROM pg_dist_node;'"
+
+echo "Adding worker node to pgadmin service..."
+scale/add-worker-pgadmin.sh "$@"
+echo "Worker node added to pgadmin service."
