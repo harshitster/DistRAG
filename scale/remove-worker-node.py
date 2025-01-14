@@ -91,7 +91,7 @@ def update_compose_file(worker_nums: List[int]) -> None:
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python remove_worker_compose.py <worker_number1> [worker_number2 ...]")
+        print("Usage: python remove-worker-node.py <worker_number1> [worker_number2 ...]")
         sys.exit(1)
     
     worker_nums = [int(num) for num in sys.argv[1:]]
