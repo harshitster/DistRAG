@@ -20,4 +20,10 @@ At its core, the RedisManager (defined in utils.py) initializes a Redis instance
 
 This caching strategy offers significant performance benefits by offloading repeat queries and enabling fast semantic lookups without full SQL execution. It also provides a foundation for personalization (e.g., cache per university or user group) and aligns well with the vector-based retrieval paradigm used throughout DistRAG.
 
+## DB Engine
+
+The DB Engine in DistRAG is a PostgreSQL-based data infrastructure component built atop a Citus coordinator. Beyond storing and distributing data shards across workers, this engine includes intelligent runtime services to initialize the schema, listen for database changes, and notify external systems (like the cache and AI engine) when updates occur. This ensures data consistency, schema awareness, and cache invalidation across the distributed system.
+
+When a schema change (such as table creation or modification) occurs, the engine broadcasts notifications to all registered LLM Engine instances. This triggers a full pipeline rebuild, ensuring that the AI system stays aware of the latest database structure and can continue generating accurate SQL from natural language prompts. In contrast, when a data update happens—specifically involving the partitioning key (e.g., university_id)—the DB Engine selectively notifies the Cache Engine. This results in a targeted flush of only the cache entries associated with the affected partition, preserving other cached results and minimizing performance impact. This bifurcation of update handling—schema-triggered pipeline rebuilds and data-triggered scoped cache invalidation—ensures the system remains both up-to-date and efficient, particularly in multi-tenant deployments.
+
 [^1]: [Citus Documentation](https://docs.citusdata.com/en/v7.0/aboutcitus/introduction_to_citus.html#:~:text=Coordinator%20%2F%20Worker%20Nodes%C2%B6)
