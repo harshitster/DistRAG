@@ -12,6 +12,9 @@ The AI Engine in DistRAG enables users to query structured data in the distribut
 
 Behind the scenes, the system is composed of three main modules: indexer.py, which semantically summarizes and embeds table schemas into a vector store; pipeline.py, which builds a modular SQL query pipeline that interprets user intent and executes SQL; and llm.py, which manages threading, environment config, model/key rotation, and persistent vector stores (via Chroma). The architecture ensures scalable, schema-aware, and human-friendly querying over large datasets without requiring SQL knowledge from the end user.
 
+#### NGINX (nginx-ai-engine) 
+An NGINX proxy/load balancer in front of the AI Engine. It distributes incoming inference requests across one or more AI engine containers for high throughput and fault tolerance.
+
 ## Cache Engine
 
 The Cache Engine in DistRAG acts as a caching layer that reduces redundant computation and database load by storing and retrieving previously seen query-response pairs. Backed by Redis with **vector search capabilities**, this service semantically caches responses by embedding incoming queries and indexing them in Redis for **approximate nearest-neighbor (ANN)** search.
