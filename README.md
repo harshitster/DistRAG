@@ -4,4 +4,6 @@ DistRAG is a containerized, distributed database platform build on **PostreSQL**
 
 ## Citus Cluster
 
-At the core of DistRAG is a Citus Cluster: one PostgreSQL instance acts as a **Coordinator** and several other acts as **Workers**. The coordinator holds metadata about the distributed tables and orchestrates queries, which each worker stores shards (horizontal partitions) of the data, [docs.citus.com] (https://docs.citusdata.com/en/v7.0/aboutcitus/introduction_to_citus.html#:~:text=Coordinator%20%2F%20Worker%20Nodes%C2%B6). 
+At the core of DistRAG is a Citus Cluster: one PostgreSQL instance acts as a **Coordinator** and several other acts as **Workers**. The coordinator holds metadata about the distributed tables and orchestrates queries, which each worker stores shards (horizontal partitions) of the data [^1].
+
+[^1]: [Citus Documentation](https://docs.citusdata.com/en/v7.0/aboutcitus/introduction_to_citus.html#:~:text=Coordinator%20%2F%20Worker%20Nodes%C2%B6)
