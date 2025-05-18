@@ -1,1 +1,3 @@
-# check
+# DistRAG: Distributed RAG Database System
+
+DistRAG is a containerized, distributed database platform build on **PostreSQL** and the Citus extension, designed for scalable query processing and *Retrieval-Augmented Generation* (RAG) tasks. It combines a Citus-based Postgres cluster with additional microservices for request routing, caching and AI-powered data processing. The system enables **horizontal scaling** of the database (by adding worker nodes), **parallel query execution** across nodes, and high availability via replication and automated backup/recovery. DistRAG's design supports scenarios such as large-scale analytics or AI-assisted question-answering over a growing dataset, all while maintaining a single entry points for the clients.
