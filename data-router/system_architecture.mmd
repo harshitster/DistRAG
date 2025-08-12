@@ -1,0 +1,46 @@
+graph TB
+    %% External Access
+    DataRouter[Data Router<br/>FastAPI CRUD Operations<br/>]
+    
+    %% Citus Cluster Core
+    subgraph "Citus Cluster"
+        Coordinator[PostgreSQL Coordinator<br/>pg_master<br/>Query Orchestration]
+        
+        Worker1[Worker 1<br/>pg_worker_1<br/>Data Shards]
+        Worker2[Worker 2<br/>pg_worker_2<br/>Data Shards]
+        
+        ClusterManager[Cluster Manager<br/>Node Management]
+    end
+    
+    %% Services
+    BackupService[Backup Service<br/>Data Protection]
+    PgAdmin[pgAdmin<br/>Web Interface]
+    
+    %% Query Flow
+    DataRouter -->|SQL Query| Coordinator
+    Coordinator -->|Fragment & Distribute| Worker1
+    Coordinator -->|Fragment & Distribute| Worker2
+    Worker1 -->|Results| Coordinator
+    Worker2 -->|Results| Coordinator
+    Coordinator -->|Merged Results| DataRouter
+    
+    %% Management
+    ClusterManager --> Coordinator
+    ClusterManager --> Worker1
+    ClusterManager --> Worker2
+    
+    BackupService --> Worker1
+    BackupService --> Worker2
+    
+    PgAdmin --> Coordinator
+    
+    %% Styling
+    classDef coordinator fill:#e3f2fd
+    classDef worker fill:#f3e5f5
+    classDef service fill:#e8f5e8
+    classDef external fill:#ffebee
+    
+    class Coordinator coordinator
+    class Worker1,Worker2 worker
+    class ClusterManager,BackupService,PgAdmin service
+    class DataRouter external

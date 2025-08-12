@@ -1,0 +1,53 @@
+graph TB
+    %% External Systems
+    Client[Client]
+    PostgresDB[(PostgreSQL)]
+    CacheEngine[Cache Service]
+
+    %% Main Components
+    subgraph "API Layer"
+        FastAPI[FastAPI Service<br/>main.py]
+    end
+
+    subgraph "RAG System Core"
+        LLM[LLM Engine<br/>llm.py]
+        Indexer[Database Indexer<br/>indexer.py]
+        Pipeline[Query Pipeline<br/>pipeline.py]
+    end
+
+    subgraph "Vector Storage"
+        ChromaDB[(ChromaDB<br/>Table Embeddings)]
+    end
+
+    subgraph "External Services"
+        Gemini[Google Gemini<br/>LLM + Embeddings]
+    end
+
+    %% RAG Flow
+    Client --> FastAPI
+    FastAPI --> CacheEngine
+    FastAPI --> LLM
+    
+    %% Indexing Flow (Retrieval Preparation)
+    LLM --> Indexer
+    Indexer --> PostgresDB
+    Indexer -->|Schema Analysis| Gemini
+    Indexer -->|Table Descriptions| ChromaDB
+    
+    %% Query Flow (Retrieval + Generation)
+    LLM --> Pipeline
+    Pipeline -->|Table Retrieval| ChromaDB
+    Pipeline -->|Text-to-SQL| Gemini
+    Pipeline -->|SQL Execution| PostgresDB
+    Pipeline -->|Response Generation| Gemini
+
+    %% Styling
+    classDef external fill:#e1f5fe
+    classDef rag fill:#f3e5f5
+    classDef storage fill:#e8f5e8
+    classDef service fill:#fff3e0
+
+    class Client,PostgresDB,CacheEngine,Gemini external
+    class LLM,Indexer,Pipeline rag
+    class ChromaDB storage
+    class FastAPI service

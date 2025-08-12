@@ -1,0 +1,45 @@
+graph TB
+    %% External Systems
+    Client[AI Engine]
+    
+    %% Cache Engine Components
+    subgraph "Cache Engine Service"
+        API[FastAPI Interface<br/>main.py]
+        CacheLogic[Cache Logic<br/>routes.py]
+        RedisManager[Redis Manager<br/>utils.py]
+    end
+
+    %% Storage & Processing
+    subgraph "Vector Storage"
+        Redis[(Redis Vector Store<br/>Query Embeddings)]
+    end
+
+    subgraph "Embedding Layer"
+        Embedder[Sentence Transformer<br/>Query Vectorization]
+    end
+
+    %% Flow
+    Client -->|Query Request| API
+    Client -->|Cache Response| API
+    
+    API --> CacheLogic
+    CacheLogic --> RedisManager
+    
+    RedisManager --> Embedder
+    RedisManager --> Redis
+    
+    %% Semantic Operations (as labels)
+    CacheLogic -.->|Semantic Search| Redis
+    RedisManager -.->|Multi-tenant Partitioning| Redis
+    Redis -.->|Similarity Matching| CacheLogic
+
+    %% Styling
+    classDef external fill:#e1f5fe
+    classDef core fill:#f3e5f5
+    classDef storage fill:#e8f5e8
+    classDef ml fill:#fff3e0
+
+    class Client external
+    class API,CacheLogic,RedisManager core
+    class Redis storage
+    class Embedder ml
